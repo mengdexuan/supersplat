@@ -245,16 +245,16 @@ const main = async () => {
     initShortcuts(events);
     await initFileHandler(scene, events, editorUI.appContainer.dom, remoteStorageDetails);
 
-    // load async models
+    // 初始化场景
     scene.start();
 
-    // handle load params
+    // 处理 URL 参数加载
     const loadList = url.searchParams.getAll('load');
     for (const value of loadList) {
         await events.invoke('load', decodeURIComponent(value));
     }
 
-    // handle OS-based file association in PWA mode
+    // 处理 PWA 模式的文件关联
     if ('launchQueue' in window) {
         window.launchQueue.setConsumer(async (launchParams: LaunchParams) => {
             for (const file of launchParams.files) {
@@ -263,6 +263,23 @@ const main = async () => {
                 await events.invoke('load', url, file.name);
                 URL.revokeObjectURL(url);
             }
+        });
+    }
+
+    // 从 URL 参数中获取 name
+    const name = url.searchParams.get('name');
+
+    if (name) {
+        // 直接加载指定的 splat 文件
+        const splatUrl = `http://8.147.109.237:8080/ruoyi-admin/output/${name}/point_cloud/iteration_30000/point_cloud.splat`;
+        await events.invoke('load', splatUrl);
+    } else {
+        console.warn('URL 参数中缺少 name 参数');
+        // 可以在这里添加错误提示或默认处理
+        events.invoke('showPopup', {
+            type: 'error',
+            header: localize('popup.error-loading'),
+            message: '缺少必要的 name 参数'
         });
     }
 };
